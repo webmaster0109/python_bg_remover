@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Background Remover</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Remove Image Background</h1>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" name="image" id="imageInput" accept="image/*" required>
+            <button type="submit">Remove Background</button>
+        </form>
+        <div id="previewContainer" class="image-comparison">
+            <div class="image-box">
+                <h3>Original Image</h3>
+                <img id="originalPreview" src="#" alt="Original preview">
+                <p>{{ result_image }}</p>
+            </div>
+            <div class="image-box">
+                <h3>Result Image</h3>
+                <div id="resultContainer">
+                    {% if result_image %}
+                        <img src="{{ result_image }}" alt="Result">
+                        <a href="{{ result_image }}" download>Download</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Add image preview for original image
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                document.getElementById('originalPreview').src = reader.result;
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        });
+
+        // Modified upload handler
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            const fileInput = document.getElementById('imageInput');
+            formData.append('image', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                if (data.result) {
+                    // Update result image without reloading
+                    const resultContainer = document.getElementById('resultContainer');
+                    resultContainer.innerHTML = `
+                        <img src="${data.result}" alt="Result">
+                        <a href="${data.result}" download>Download</a>
+                    `;
+                } else if (data.error) {
+                    alert(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred during processing');
+            }
+        });
+    </script>
+</body>
+</html>
